@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fastline - Train booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <button class="logo" data-action="nav" data-view="book" aria-label="Fastline home">
+      <img src="logo-wordmark.jpg" alt="Fastline" width="300" height="36">
+    </button>
+    <nav class="nav" aria-label="Main">
+      <button data-action="nav" data-view="book">Book a train</button>
+      <button data-action="nav" data-view="tickets">My tickets</button>
+      <button data-action="nav" data-view="info">Stations and travel rules</button>
+    </nav>
+    <div class="acct" id="acct"></div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <div class="wrap">
+    <b>Fastline</b>
+    <span>Schedules, fares and accounts  are  stored in your web browser.</span>
+  </div>
+</footer>
+
+<dialog id="authDlg" aria-labelledby="authTitle"><div class="dlg" id="authBody"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
