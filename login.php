@@ -15,12 +15,10 @@ if (isset($_GET['api'])) {
         exit;
     }
     
-    // Look up the user
     $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     
-    // Verify the password against the hash in the database
     if ($user && password_verify($pw, $user['password_hash'])) {
         echo json_encode(['success' => true, 'id' => $user['id'], 'name' => $user['full_name'], 'email' => $user['email']]);
     } else {

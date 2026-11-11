@@ -199,32 +199,107 @@ function viewCheckout(app) {
 }
 
 function viewTicket(app) {
-  const b = getBookings().find(x => x.id === state.currentBooking);
-  if (!b) return go('tickets');
+  // This is the page shown immediately after a successful booking
   app.innerHTML = `<div class="wrap page">
-    <h1>Your tickets</h1>
-    <p>Ticket logic goes here.</p>
+    <h1>Booking Successful!</h1>
+    <div class="panel">
+      <h2>Your ticket is confirmed</h2>
+      <p>You can view all your tickets by clicking <b>My tickets</b> in the menu above.</p>
+      <button class="btn" data-action="nav" data-view="tickets">Go to My tickets</button>
+    </div>
   </div>`;
 }
 
-function viewTickets(app) {
+async function viewTickets(app) {
   app.innerHTML = `<div class="wrap page">
     <h1>My tickets</h1>
-    <div class="panel"><h2>Your bookings</h2><p>No bookings yet.</p></div>
+    <div class="panel" id="ticketsList"><p>Loading your tickets...</p></div>
   </div>`;
+
+  if (!state.user || !state.user.id) {
+    $('#ticketsList').innerHTML = '<p>Please sign in to view your tickets.</p>';
+    return;
+  }
+
+  try {
+    const response = await fetch(`/FastLine/fastline/my_tickets.php?api=1&user_id=${state.user.id}`);
+    const data = await response.json();
+    
+    if (data.success && data.bookings.length > 0) {
+      let html = '<h2>Your bookings</h2>';
+      data.bookings.forEach(b => {
+        html += `
+          <div class="bk" style="border-bottom: 1px solid #ccc; padding: 15px 0;">
+            <div>
+              <h3>${b.origin} to ${b.destination}</h3>
+              <p>Ref: <b>${b.booking_ref}</b> | Train: ${b.train_number} (${b.train_name})</p>
+              <p>Date: ${b.departure_time} | Passenger: ${b.passenger_name}</p>
+            </div>
+            <div class="btns">
+              <span class="tag" style="background:#4CAF50; color:white;">${b.status.toUpperCase()}</span>
+            </div>
+          </div>
+        `;
+      });
+      $('#ticketsList').innerHTML = html;
+    } else {
+      $('#ticketsList').innerHTML = '<p>No bookings yet. <button class="btn" data-action="nav" data-view="book">Book a train</button></p>';
+    }
+  } catch (e) {
+    $('#ticketsList').innerHTML = '<p class="err">Could not load your tickets right now.</p>';
+  }
 }
 
-function viewInfo(app) {
+async function viewInfo(app) {
   app.innerHTML = `<div class="wrap page">
     <h1>Stations and travel rules</h1>
-    <div class="panel"><h2>Stations</h2><p>Info goes here.</p></div>
+    <div class="panel" id="stationsList"><p>Loading stations...</p></div>
+    
+    <div class="panel"><h2>Passenger types</h2>
+      <table><thead><tr><th>Type</th><th>Age</th><th>Fare</th><th>Seat</th></tr></thead><tbody>
+        <tr><td>Infant</td><td>Under 2 years</td><td>Free</td><td>On an adult's lap</td></tr>
+        <tr><td>Child</td><td>2 to 17 years</td><td>Half fare</td><td>Own seat</td></tr>
+        <tr><td>Adult</td><td>18 years and above</td><td>Full fare</td><td>Own seat</td></tr>
+      </tbody></table></div>
+    <div class="panel"><h2>Ticket validity</h2>
+      <ul><li>Tickets are valid only for the selected train and date.</li><li>Arrive 45 minutes before departure.</li><li>Cancel bookings up to 60 minutes before departure.</li></ul></div>
   </div>`;
-}
 
+  try {
+    const response = await fetch('/FastLine/fastline/info.php?api=1');
+    const data = await response.json();
+    
+    if (data.success && data.stations.length > 0) {
+      let html = '<h2>Stations</h2><div class="st-grid">';
+      data.stations.forEach(s => {
+        html += `
+          <div class="st">
+            <h3>${s.name}</h3>
+            <p>${s.city} County</p>
+          </div>
+        `;
+      });
+      html += '</div>';
+      $('#stationsList').innerHTML = html;
+    } else {
+      $('#stationsList').innerHTML = '<p>Could not load stations.</p>';
+    }
+  } catch (e) {
+    $('#stationsList').innerHTML = '<p class="err">Could not connect to the server.</p>';
+  }
+}
 /* ---------- navigation ---------- */
 function render() {
   const app = $('#app');
-  ({ book: viewBook, checkout: viewCheckout, ticket: viewTicket, tickets: viewTickets, info: viewInfo }[state.view] || viewBook)(app);
+  const viewFunction = { 
+    book: viewBook, 
+    checkout: viewCheckout, 
+    ticket: viewTicket, 
+    tickets: viewTickets, 
+    info: viewInfo 
+  }[state.view] || viewBook;
+  
+  viewFunction(app);
   updateHeader();
 }
 function go(view) {
@@ -378,14 +453,14 @@ async function doLogin(form) {
   if (!email || !pw) return err.textContent = 'Enter your email and password.';
 
   try {
-    const response = await fetch('/FastLine/fastline/login.php?api=1', {
+   const response = await fetch('login.php?api=1', {
       method: 'POST',
       body: JSON.stringify({ email, pw })
     });
     const data = await response.json();
     
     if (data.success) {
-      state.user = { id: data.id, email: data.email, name: data.name };
+   state.user = { id: data.id, email: data.email, name: data.name };
       $('#authDlg').close(); toast('Signed in as ' + data.name); render();
     } else {
       err.textContent = data.message || 'Invalid login.';
